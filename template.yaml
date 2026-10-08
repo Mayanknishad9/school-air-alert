@@ -1,0 +1,108 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  School Air Alert - forecasts tomorrow's school-hours PM2.5 for Delhi every evening
+  at 6 PM IST and alerts principals in their area.
+
+Parameters:
+  OpenAqApiKey:
+    Type: String
+    NoEcho: true
+    Description: OpenAQ API key (explore.openaq.org)
+  FirmsMapKey:
+    Type: String
+    NoEcho: true
+    Description: NASA FIRMS MAP_KEY
+
+Globals:
+  Function:
+    Runtime: python3.13
+    Architectures: [x86_64]
+    CodeUri: backend/
+    Environment:
+      Variables:
+        FORECAST_BUCKET: !Ref ForecastBucket
+        ALERT_TOPIC_ARN: !Ref AlertTopic
+
+Resources:
+  # ---------------------------------------------------------------- storage + alerts
+  ForecastBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      LifecycleConfiguration:
+        Rules:
+          - Id: keep-90-days
+            Status: Enabled
+            Prefix: forecasts/2
+            ExpirationInDays: 90
+
+  AlertTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: School Air Alert
+
+  # ---------------------------------------------------------------- daily forecast
+  ForecastFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: forecast_job.handler
+      MemorySize: 1024
+      Timeout: 300
+      Environment:
+        Variables:
+          OPENAQ_API_KEY: !Ref OpenAqApiKey
+          FIRMS_MAP_KEY: !Ref FirmsMapKey
+      Policies:
+        - S3CrudPolicy: { BucketName: !Ref ForecastBucket }
+        - SNSPublishMessagePolicy: { TopicName: !GetAtt AlertTopic.TopicName }
+      Events:
+        Every6pmIST:
+          Type: ScheduleV2
+          Properties:
+            ScheduleExpression: cron(0 18 * * ? *)
+            ScheduleExpressionTimezone: Asia/Kolkata
+            Description: Issue tomorrow's school air forecast at 6 PM IST
+
+  # ---------------------------------------------------------------- website API
+  ApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: api.handler
+      MemorySize: 256
+      Timeout: 10
+      Policies:
+        - S3ReadPolicy: { BucketName: !Ref ForecastBucket }
+        - Statement:
+            - Effect: Allow
+              Action: sns:Subscribe
+              Resource: !Ref AlertTopic
+      Events:
+        Forecast:
+          Type: HttpApi
+          Properties: { ApiId: !Ref Api, Path: /forecast, Method: GET }
+        Stations:
+          Type: HttpApi
+          Properties: { ApiId: !Ref Api, Path: /stations, Method: GET }
+        Subscribe:
+          Type: HttpApi
+          Properties: { ApiId: !Ref Api, Path: /subscribe, Method: POST }
+
+  Api:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      CorsConfiguration:
+        AllowOrigins: ["*"]
+        AllowMethods: [GET, POST, OPTIONS]
+        AllowHeaders: [Content-Type]
+
+Outputs:
+  ApiUrl:
+    Description: Base URL for the website (GET /forecast, POST /subscribe)
+    Value: !Sub https://${Api}.execute-api.${AWS::Region}.amazonaws.com
+  ForecastFunctionName:
+    Description: Run this once to issue a forecast right away
+    Value: !Ref ForecastFunction
+  ForecastBucketName:
+    Value: !Ref ForecastBucket
+  AlertTopicArn:
+    Value: !Ref AlertTopic

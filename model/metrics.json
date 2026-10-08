@@ -1,0 +1,109 @@
+{
+  "Our model": {
+    "all_year": {
+      "n_days": 2325,
+      "mae": 19.3,
+      "category_accuracy": 0.591,
+      "category_within_1": 0.959,
+      "bad_days": 407,
+      "alert_recall": 0.744,
+      "alert_precision": 0.802
+    },
+    "oct_to_jan": {
+      "n_days": 441,
+      "mae": 39.1,
+      "category_accuracy": 0.587,
+      "category_within_1": 0.959,
+      "bad_days": 267,
+      "alert_recall": 0.884,
+      "alert_precision": 0.858
+    }
+  },
+  "Our model without fire data": {
+    "all_year": {
+      "n_days": 2325,
+      "mae": 19.2,
+      "category_accuracy": 0.591,
+      "category_within_1": 0.96,
+      "bad_days": 407,
+      "alert_recall": 0.742,
+      "alert_precision": 0.81
+    },
+    "oct_to_jan": {
+      "n_days": 441,
+      "mae": 39.6,
+      "category_accuracy": 0.58,
+      "category_within_1": 0.946,
+      "bad_days": 267,
+      "alert_recall": 0.88,
+      "alert_precision": 0.855
+    }
+  },
+  "Persistence (today = tomorrow)": {
+    "all_year": {
+      "n_days": 2325,
+      "mae": 24.8,
+      "category_accuracy": 0.52,
+      "category_within_1": 0.926,
+      "bad_days": 407,
+      "alert_recall": 0.698,
+      "alert_precision": 0.701
+    },
+    "oct_to_jan": {
+      "n_days": 441,
+      "mae": 47.5,
+      "category_accuracy": 0.515,
+      "category_within_1": 0.927,
+      "bad_days": 267,
+      "alert_recall": 0.831,
+      "alert_precision": 0.844
+    }
+  },
+  "CAMS global model": {
+    "all_year": {
+      "n_days": 2325,
+      "mae": 49.3,
+      "category_accuracy": 0.278,
+      "category_within_1": 0.683,
+      "bad_days": 407,
+      "alert_recall": 0.224,
+      "alert_precision": 0.256
+    },
+    "oct_to_jan": {
+      "n_days": 441,
+      "mae": 75.8,
+      "category_accuracy": 0.254,
+      "category_within_1": 0.673,
+      "bad_days": 267,
+      "alert_recall": 0.296,
+      "alert_precision": 0.898
+    }
+  },
+  "feature_importance_pct": {
+    "pm_today": 21.2,
+    "pm_7d": 8.5,
+    "pm_school_today": 5.9,
+    "wx_wind_night": 4.5,
+    "wx_wind_tmr": 4.3,
+    "cams_tmr": 4.0,
+    "doy_sin": 3.8,
+    "wx_u_tmr": 3.8,
+    "wx_temp_tmr": 3.3,
+    "wx_blh_night": 3.3,
+    "wx_rh_tmr": 3.2,
+    "wx_v_tmr": 3.2,
+    "pm_yesterday": 3.1,
+    "nw_wind_today": 3.1,
+    "pm_trend": 3.0,
+    "doy_cos": 2.9,
+    "wx_blh_tmr": 2.8,
+    "pm_last6h": 2.7,
+    "station_id": 2.4,
+    "fires_1d": 2.4,
+    "fires_3d": 2.1,
+    "fires_7d": 2.1,
+    "wx_rain_tmr": 1.7,
+    "fire_transport": 1.7,
+    "dow_tmr": 1.2
+  }
+}

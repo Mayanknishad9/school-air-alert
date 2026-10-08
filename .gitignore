@@ -3,3 +3,6 @@ __pycache__/
 .env
 *.pyc
 data/*.csv
+.aws-sam/
+samconfig.toml
+out.json
