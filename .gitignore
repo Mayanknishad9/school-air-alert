@@ -6,3 +6,4 @@ data/*.csv
 .aws-sam/
 samconfig.toml
 out.json
+site.zip

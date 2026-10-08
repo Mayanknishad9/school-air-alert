@@ -1,0 +1,599 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>School Air Alert · Delhi</title>
+<meta name="description" content="Tomorrow's air during Delhi school hours, forecast every evening at 6 PM, with plain advice for assembly, PE and break.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Mukta:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --page: #EDF1EE;
+    --paper: #FFFFFF;
+    --ink: #1E2A27;
+    --ink-soft: #52605C;
+    --rule: #C9D3CE;
+    --blue: #2347C5;
+    --blue-soft: #DCE3FA;
+
+    /* India NAQI category colours */
+    --good: #3E9B48;
+    --satisfactory: #9BC53D;
+    --moderate: #F2C12E;
+    --poor: #EF8A2B;
+    --verypoor: #D9342B;
+    --severe: #7E1F1F;
+
+    --display: "Baloo 2", "Mukta", system-ui, sans-serif;
+    --text: "Mukta", system-ui, sans-serif;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--page);
+    color: var(--ink);
+    font: 400 1.0625rem/1.6 var(--text);
+  }
+  a { color: var(--blue); }
+  :focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; border-radius: 4px; }
+
+  .wrap { max-width: 46rem; margin: 0 auto; padding: 0 1.25rem; }
+
+  /* ---------- top bar ---------- */
+  .bar { display: flex; align-items: center; justify-content: space-between; padding: 1.1rem 0; }
+  .brand { font: 700 1.2rem/1 var(--display); letter-spacing: -0.01em; display: flex; gap: .55rem; align-items: center; }
+  .brand svg { flex: none; }
+  .lang { display: inline-flex; border: 1.5px solid var(--ink); border-radius: 999px; overflow: hidden; }
+  .lang button {
+    font: 600 .9rem/1 var(--text); border: 0; background: none; color: var(--ink);
+    padding: .45rem .8rem; cursor: pointer;
+  }
+  .lang button[aria-pressed="true"] { background: var(--ink); color: var(--page); }
+
+  /* ---------- hero ---------- */
+  .hero { padding: 1.5rem 0 2.5rem; }
+  h1 {
+    font: 800 clamp(2.3rem, 7vw, 3.6rem)/1.02 var(--display);
+    letter-spacing: -0.025em; margin: 0 0 .9rem; max-width: 14ch;
+  }
+  .lede { color: var(--ink-soft); margin: 0 0 1.75rem; max-width: 36rem; font-size: 1.125rem; }
+
+  .picker { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin-bottom: 1rem; }
+  .picker label { font-weight: 600; }
+  select, input[type=email] {
+    font: 500 1rem/1.2 var(--text); color: var(--ink); background: var(--paper);
+    border: 1.5px solid var(--rule); border-radius: 10px; padding: .65rem .8rem; min-height: 46px;
+  }
+  select:focus-visible, input:focus-visible { border-color: var(--blue); }
+
+  /* the timetable card: the memorable element */
+  .day {
+    background: var(--paper); border-radius: var(--radius);
+    border: 1.5px solid var(--ink);
+    overflow: hidden;
+  }
+  .day-head {
+    display: grid; grid-template-columns: 1fr auto; gap: .25rem 1rem; align-items: end;
+    padding: 1.1rem 1.25rem 1rem; border-bottom: 1.5px solid var(--ink);
+    background: var(--cat, var(--rule));
+    color: var(--cat-ink, var(--ink));
+  }
+  .day-date { font-weight: 600; grid-column: 1 / -1; opacity: .9; }
+  .verdict { font: 800 clamp(1.6rem, 5vw, 2.15rem)/1.05 var(--display); letter-spacing: -0.015em; margin: 0; }
+  .reading { text-align: right; line-height: 1.1; }
+  .reading b { font: 800 2.2rem/1 var(--display); display: block; }
+  .reading span { font-size: .85rem; }
+
+  .periods { list-style: none; margin: 0; padding: 0; }
+  .periods li {
+    display: grid; grid-template-columns: 3.4rem 1fr auto; gap: .6rem; align-items: center;
+    padding: .7rem 1.25rem;
+    /* exercise-book ruled lines */
+    border-bottom: 1px solid var(--blue-soft);
+  }
+  .periods li:last-child { border-bottom: 0; }
+  .periods time { color: var(--ink-soft); font-variant-numeric: tabular-nums; font-size: .95rem; }
+  .periods .what { font-weight: 600; }
+  .where {
+    font: 700 .85rem/1 var(--text); padding: .38rem .65rem; border-radius: 999px; white-space: nowrap;
+  }
+  .where.out { background: #E3F2E1; color: #1F5A27; }
+  .where.short { background: #FFF3CC; color: #6B4E00; }
+  .where.in { background: #FBE0DE; color: #8A1C15; }
+
+  .day-foot { padding: 1rem 1.25rem 1.15rem; border-top: 1.5px solid var(--ink); background: #FAFBFA; }
+  .advice { margin: 0 0 .35rem; font-weight: 500; }
+  .why { margin: 0; color: var(--ink-soft); font-size: .95rem; }
+  .issued { margin: .75rem 0 0; font-size: .85rem; color: var(--ink-soft); }
+
+  .empty { padding: 1.5rem 1.25rem; }
+  .empty p { margin: 0 0 .5rem; }
+  .empty .big { font: 700 1.4rem/1.2 var(--display); }
+
+  /* ---------- sections ---------- */
+  section { padding: 2.75rem 0; border-top: 1.5px solid var(--rule); }
+  h2 { font: 700 clamp(1.6rem, 4.5vw, 2.1rem)/1.1 var(--display); letter-spacing: -0.015em; margin: 0 0 .6rem; }
+  .sub { color: var(--ink-soft); margin: 0 0 1.5rem; max-width: 36rem; }
+
+  /* signup */
+  form.signup { display: grid; gap: .75rem; grid-template-columns: 1fr; max-width: 34rem; }
+  @media (min-width: 560px) { form.signup { grid-template-columns: 1.4fr 1fr; } }
+  form.signup .full { grid-column: 1 / -1; }
+  form.signup label { display: grid; gap: .3rem; font-weight: 600; }
+  button.cta {
+    font: 700 1.05rem/1 var(--display); color: #fff; background: var(--blue);
+    border: 0; border-radius: 10px; padding: .95rem 1.2rem; cursor: pointer; min-height: 50px;
+  }
+  form.signup button.cta { align-self: end; white-space: nowrap; }
+  button.cta:hover { background: #1A389F; }
+  button.cta[disabled] { opacity: .6; cursor: progress; }
+  .note { font-size: .9rem; color: var(--ink-soft); margin: 0; }
+  .status { margin: .25rem 0 0; font-weight: 500; }
+  .status.ok { color: #1F5A27; }
+  .status.err { color: #8A1C15; }
+
+  /* scale */
+  .scale { list-style: none; margin: 0; padding: 0; display: grid; gap: .5rem; }
+  .scale li {
+    display: grid; grid-template-columns: .55rem 7.5rem 1fr; gap: .9rem; align-items: start;
+    background: var(--paper); border-radius: 10px; padding: .8rem 1rem .8rem .8rem;
+  }
+  .swatch { align-self: stretch; border-radius: 4px; }
+  .scale .name { font: 700 1.05rem/1.2 var(--display); }
+  .scale .range { display: block; font: 400 .85rem/1.3 var(--text); color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+  .scale p { margin: 0; }
+  @media (max-width: 480px) {
+    .scale li { grid-template-columns: .55rem 1fr; }
+    .scale li p { grid-column: 2; }
+  }
+
+  /* accuracy */
+  .bars { display: grid; gap: 1.1rem; margin: 0 0 1.5rem; }
+  .bar-row { display: grid; gap: .35rem; }
+  .bar-label { display: flex; justify-content: space-between; gap: 1rem; font-weight: 600; }
+  .bar-label span:last-child { font: 800 1.15rem/1 var(--display); font-variant-numeric: tabular-nums; }
+  .track { height: 14px; background: #DDE4E0; border-radius: 999px; overflow: hidden; }
+  .fill { height: 100%; border-radius: 999px; background: var(--ink-soft); }
+  .bar-row.ours .fill { background: var(--blue); }
+  .example {
+    background: var(--paper); border-left: 5px solid var(--severe); border-radius: 0 10px 10px 0;
+    padding: 1rem 1.15rem; margin: 0;
+  }
+  .example p { margin: 0 0 .35rem; }
+  .example p:last-child { margin: 0; color: var(--ink-soft); font-size: .95rem; }
+  .fine { font-size: .9rem; color: var(--ink-soft); margin: 1rem 0 0; }
+
+  /* how it works: a real daily sequence, so it is numbered */
+  .steps { list-style: none; margin: 0; padding: 0; counter-reset: step; display: grid; gap: 1rem; }
+  .steps li { counter-increment: step; display: grid; grid-template-columns: 2.4rem 1fr; gap: .9rem; }
+  .steps li::before {
+    content: counter(step); font: 800 1.2rem/2.4rem var(--display); text-align: center;
+    width: 2.4rem; height: 2.4rem; border-radius: 50%; border: 1.5px solid var(--ink);
+  }
+  .steps b { display: block; font: 700 1.1rem/1.3 var(--display); }
+  .steps p { margin: .1rem 0 0; color: var(--ink-soft); }
+
+  footer { padding: 2rem 0 3rem; border-top: 1.5px solid var(--rule); color: var(--ink-soft); font-size: .92rem; }
+  footer p { margin: 0 0 .4rem; }
+
+  /* Devanagari needs normal tracking and a little more line height */
+  html[lang="hi"] h1, html[lang="hi"] h2, html[lang="hi"] .verdict, html[lang="hi"] .brand { letter-spacing: 0; }
+  html[lang="hi"] h1 { line-height: 1.18; }
+  html[lang="hi"] .verdict, html[lang="hi"] h2 { line-height: 1.25; }
+
+  .skeleton { color: transparent; background: #E4E9E6; border-radius: 6px; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .day.reveal .periods li { animation: rule-in .38s ease-out both; }
+    .day.reveal .periods li:nth-child(2) { animation-delay: .06s; }
+    .day.reveal .periods li:nth-child(3) { animation-delay: .12s; }
+    .day.reveal .periods li:nth-child(4) { animation-delay: .18s; }
+    .day.reveal .periods li:nth-child(5) { animation-delay: .24s; }
+    @keyframes rule-in { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: none; } }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="bar">
+    <div class="brand">
+      <svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true">
+        <rect x="1" y="5" width="24" height="18" rx="3" fill="none" stroke="currentColor" stroke-width="2"/>
+        <path d="M1 10h24" stroke="currentColor" stroke-width="2"/>
+        <path d="M7 2v6M19 2v6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <path d="M6 16c2-1.6 4-1.6 6 0s4 1.6 6 0 3-1 3-1" fill="none" stroke="#2347C5" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <span data-t="brand">School Air Alert</span>
+    </div>
+    <div class="lang" role="group" aria-label="Language">
+      <button type="button" data-lang="en" aria-pressed="true">English</button>
+      <button type="button" data-lang="hi" aria-pressed="false">हिंदी</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="hero">
+      <h1 data-t="h1">Know tomorrow's air before the bell rings.</h1>
+      <p class="lede" data-t="lede">Every evening at 6 PM we forecast the air in your area during school hours tomorrow, and tell you what to move indoors.</p>
+
+      <div class="picker">
+        <label for="area" data-t="area">Your school's area</label>
+        <select id="area"></select>
+      </div>
+
+      <article class="day" id="day" aria-live="polite">
+        <div class="empty"><p class="big skeleton">Loading tomorrow's forecast</p></div>
+      </article>
+    </div>
+
+    <section id="alerts" aria-labelledby="alerts-h">
+      <h2 id="alerts-h" data-t="alertsH">Get it by email every evening</h2>
+      <p class="sub" data-t="alertsSub">One short message at 6 PM, only for your area. Enough time to change tomorrow's assembly and PE plans.</p>
+      <form class="signup" id="signup" novalidate>
+        <label class="full"><span data-t="emailL">School email</span>
+          <input type="email" id="email" autocomplete="email" required placeholder="principal@school.edu.in">
+        </label>
+        <label><span data-t="areaL">Area</span>
+          <select id="area2"></select>
+        </label>
+        <button class="cta" type="submit" id="subBtn" data-t="subBtn">Send me the alert</button>
+        <p class="note full" data-t="subNote">You'll get a confirmation email from AWS first. Click the link in it to start the alerts.</p>
+        <p class="status full" id="subStatus" role="status"></p>
+      </form>
+    </section>
+
+    <section aria-labelledby="scale-h">
+      <h2 id="scale-h" data-t="scaleH">What each level means for a school day</h2>
+      <p class="sub" data-t="scaleSub">PM2.5 averaged over school hours (µg/m³), using India's National Air Quality Index bands.</p>
+      <ul class="scale" id="scale"></ul>
+    </section>
+
+    <section aria-labelledby="acc-h">
+      <h2 id="acc-h" data-t="accH">How often it warns you in time</h2>
+      <p class="sub" data-t="accSub">Share of Very Poor and Severe school days (October to January) that each forecast warned about the evening before.</p>
+      <div class="bars">
+        <div class="bar-row ours">
+          <div class="bar-label"><span data-t="accOurs">School Air Alert</span><span>88%</span></div>
+          <div class="track"><div class="fill" style="width:88%"></div></div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label"><span data-t="accPersist">Assuming tomorrow will be like today</span><span>83%</span></div>
+          <div class="track"><div class="fill" style="width:83%"></div></div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label"><span data-t="accCams">CAMS global forecast (used by many AQI apps)</span><span>30%</span></div>
+          <div class="track"><div class="fill" style="width:30%"></div></div>
+        </div>
+      </div>
+      <figure class="example">
+        <p data-t="exMain"><b>12 Nov 2025, 6 PM.</b> Forecast for the next school day: Severe at Alipur, Anand Vihar and R K Puram (334, 327, 324 µg/m³).</p>
+        <p data-t="exReal">What the monitors measured: 319, 353 and 342 µg/m³.</p>
+      </figure>
+      <p class="fine" data-t="accFine">Tested on 2,325 school days across 6 Delhi monitors (Feb 2025 – Oct 2026). Each month was forecast by a model that never saw that month. Average error: 19 µg/m³, against 49 for the CAMS global forecast.</p>
+    </section>
+
+    <section aria-labelledby="how-h">
+      <h2 id="how-h" data-t="howH">What happens every evening</h2>
+      <ol class="steps">
+        <li><div><b data-t="s1H">6 PM: the latest readings come in</b><p data-t="s1">Today's PM2.5 from CPCB and DPCC monitors, tomorrow's weather forecast, and NASA satellite counts of crop fires in Punjab and Haryana.</p></div></li>
+        <li><div><b data-t="s2H">The model forecasts school hours</b><p data-t="s2">It predicts the average PM2.5 between 7 AM and 2 PM tomorrow for each area. Calm nights and low winds trap smoke until morning, and the model has learned that from two years of data.</p></div></li>
+        <li><div><b data-t="s3H">You get one plain message</b><p data-t="s3">The level, what to move indoors, and why the air is bad. Runs on AWS Lambda, EventBridge, S3 and SNS.</p></div></li>
+      </ol>
+    </section>
+  </main>
+
+  <footer>
+    <p data-t="foot1">Air data: CPCB and DPCC monitors via OpenAQ. Weather and CAMS: Open-Meteo. Fires: NASA FIRMS.</p>
+    <p><span data-t="foot2">A forecast, not a guarantee. Watch the sky and your students too.</span> · <a href="https://github.com/Mayanknishad9/school-air-alert">GitHub</a></p>
+  </footer>
+</div>
+
+<script>
+const API = "https://qebjax447e.execute-api.ap-south-1.amazonaws.com";
+
+const LEVELS = [
+  { key: "Good",         max: 30,  color: "var(--good)",         ink: "#fff" },
+  { key: "Satisfactory", max: 60,  color: "var(--satisfactory)", ink: "#1E2A27" },
+  { key: "Moderate",     max: 90,  color: "var(--moderate)",     ink: "#1E2A27" },
+  { key: "Poor",         max: 120, color: "var(--poor)",         ink: "#1E2A27" },
+  { key: "Very Poor",    max: 250, color: "var(--verypoor)",     ink: "#fff" },
+  { key: "Severe",       max: Infinity, color: "var(--severe)",  ink: "#fff" },
+];
+
+// what each level means for the parts of a school day that happen outside
+// out = outdoors is fine, short = outdoors but shorter / lighter, in = move indoors
+const PLAN = {
+  "Good":         { assembly: "out",   pe: "out",   break: "out",   dispersal: "out" },
+  "Satisfactory": { assembly: "out",   pe: "out",   break: "out",   dispersal: "out" },
+  "Moderate":     { assembly: "out",   pe: "short", break: "out",   dispersal: "out" },
+  "Poor":         { assembly: "short", pe: "in",    break: "short", dispersal: "out" },
+  "Very Poor":    { assembly: "in",    pe: "in",    break: "in",    dispersal: "short" },
+  "Severe":       { assembly: "in",    pe: "in",    break: "in",    dispersal: "short" },
+};
+
+const T = {
+  en: {
+    brand: "School Air Alert",
+    h1: "Know tomorrow's air before the bell rings.",
+    lede: "Every evening at 6 PM we forecast the air in your area during school hours tomorrow, and tell you what to move indoors.",
+    area: "Your school's area",
+    alertsH: "Get it by email every evening",
+    alertsSub: "One short message at 6 PM, only for your area. Enough time to change tomorrow's assembly and PE plans.",
+    emailL: "School email", areaL: "Area", subBtn: "Send me the alert",
+    subNote: "You'll get a confirmation email from AWS first. Click the link in it to start the alerts.",
+    scaleH: "What each level means for a school day",
+    scaleSub: "PM2.5 averaged over school hours (µg/m³), using India's National Air Quality Index bands.",
+    accH: "How often it warns you in time",
+    accSub: "Share of Very Poor and Severe school days (October to January) that each forecast warned about the evening before.",
+    accOurs: "School Air Alert", accPersist: "Assuming tomorrow will be like today",
+    accCams: "CAMS global forecast (used by many AQI apps)",
+    exMain: "<b>12 Nov 2025, 6 PM.</b> Forecast for the next school day: Severe at Alipur, Anand Vihar and R K Puram (334, 327, 324 µg/m³).",
+    exReal: "What the monitors measured: 319, 353 and 342 µg/m³.",
+    accFine: "Tested on 2,325 school days across 6 Delhi monitors (Feb 2025 – Oct 2026). Each month was forecast by a model that never saw that month. Average error: 19 µg/m³, against 49 for the CAMS global forecast.",
+    howH: "What happens every evening",
+    s1H: "6 PM: the latest readings come in",
+    s1: "Today's PM2.5 from CPCB and DPCC monitors, tomorrow's weather forecast, and NASA satellite counts of crop fires in Punjab and Haryana.",
+    s2H: "The model forecasts school hours",
+    s2: "It predicts the average PM2.5 between 7 AM and 2 PM tomorrow for each area. Calm nights and low winds trap smoke until morning, and the model has learned that from two years of data.",
+    s3H: "You get one plain message",
+    s3: "The level, what to move indoors, and why the air is bad. Runs on AWS Lambda, EventBridge, S3 and SNS.",
+    foot1: "Air data: CPCB and DPCC monitors via OpenAQ. Weather and CAMS: Open-Meteo. Fires: NASA FIRMS.",
+    foot2: "A forecast, not a guarantee. Watch the sky and your students too.",
+    // dynamic
+    hours: "7 AM – 2 PM",
+    verdict: { out: "Outdoor activities are fine", mixed: "Keep outdoor time short", in: "Keep children indoors" },
+    unit: "µg/m³ PM2.5",
+    periods: { assembly: "Assembly", pe: "PE / games", break: "Break", dispersal: "Home time" },
+    where: { out: "Outdoors", short: "Outdoors, shorter", in: "Indoors" },
+    advice: {
+      "Good": "All outdoor activities are fine.",
+      "Satisfactory": "Outdoor activities are fine. Sensitive children may take it easy.",
+      "Moderate": "Shorten long outdoor sports. Keep inhalers handy for asthmatic students.",
+      "Poor": "Avoid intense outdoor sports. Hold assembly briefly or indoors.",
+      "Very Poor": "Move assembly and PE indoors. Keep windows closed in the first hours.",
+      "Severe": "No outdoor activity. Consider online classes for young children.",
+    },
+    why: n => `Why: ${n} crop fires in Punjab and Haryana in the last 3 days, and the wind is carrying the smoke towards Delhi.`,
+    issued: (t) => `Forecast issued ${t}.`,
+    noneBig: "Tomorrow's forecast comes out at 6 PM.",
+    noneSmall: "Sign up below to get it by email the moment it's ready.",
+    loadErr: "Couldn't load the forecast. Check your connection and refresh the page.",
+    exampleTag: "Example from 12 Nov 2025 (demo data)",
+    subSending: "Sending…",
+    subErrEmail: "Enter a valid email address.",
+    subErr: "Couldn't sign you up. Try again in a minute.",
+    levels: { "Good": "Good", "Satisfactory": "Satisfactory", "Moderate": "Moderate", "Poor": "Poor", "Very Poor": "Very Poor", "Severe": "Severe" },
+  },
+  hi: {
+    brand: "स्कूल एयर अलर्ट",
+    h1: "घंटी बजने से पहले जानिए कल की हवा।",
+    lede: "हर शाम 6 बजे हम आपके इलाके में कल स्कूल के समय की हवा का अनुमान लगाते हैं, और बताते हैं कि क्या अंदर करना है।",
+    area: "आपके स्कूल का इलाका",
+    alertsH: "हर शाम ईमेल पर पाएँ",
+    alertsSub: "शाम 6 बजे एक छोटा संदेश, सिर्फ़ आपके इलाके के लिए। कल की प्रार्थना सभा और खेल की योजना बदलने का पूरा समय।",
+    emailL: "स्कूल का ईमेल", areaL: "इलाका", subBtn: "मुझे अलर्ट भेजें",
+    subNote: "पहले AWS से एक पुष्टि ईमेल आएगा। अलर्ट शुरू करने के लिए उसमें दिए लिंक पर क्लिक करें।",
+    scaleH: "स्कूल के दिन के लिए हर स्तर का मतलब",
+    scaleSub: "स्कूल के समय का औसत PM2.5 (µg/m³), भारत के राष्ट्रीय वायु गुणवत्ता सूचकांक के अनुसार।",
+    accH: "यह कितनी बार समय पर चेतावनी देता है",
+    accSub: "अक्टूबर से जनवरी के बहुत खराब और गंभीर स्कूल-दिनों में से कितनों की चेतावनी एक शाम पहले मिली।",
+    accOurs: "स्कूल एयर अलर्ट", accPersist: "यह मानकर कि कल आज जैसा होगा",
+    accCams: "CAMS वैश्विक पूर्वानुमान (कई AQI ऐप इसी का उपयोग करते हैं)",
+    exMain: "<b>12 नवंबर 2025, शाम 6 बजे।</b> अगले स्कूल-दिन का अनुमान: अलीपुर, आनंद विहार और आर के पुरम में गंभीर (334, 327, 324 µg/m³)।",
+    exReal: "मॉनिटरों ने असल में मापा: 319, 353 और 342 µg/m³।",
+    accFine: "दिल्ली के 6 मॉनिटरों के 2,325 स्कूल-दिनों पर परखा गया (फ़रवरी 2025 – अक्टूबर 2026)। हर महीने का अनुमान ऐसे मॉडल ने लगाया जिसने वह महीना कभी नहीं देखा। औसत त्रुटि: 19 µg/m³, CAMS में 49।",
+    howH: "हर शाम क्या होता है",
+    s1H: "शाम 6 बजे: ताज़ा आँकड़े आते हैं",
+    s1: "CPCB और DPCC मॉनिटरों से आज का PM2.5, कल का मौसम पूर्वानुमान, और पंजाब-हरियाणा में पराली जलाने की NASA उपग्रह गिनती।",
+    s2H: "मॉडल स्कूल के समय का अनुमान लगाता है",
+    s2: "यह हर इलाके के लिए कल सुबह 7 से दोपहर 2 बजे तक का औसत PM2.5 बताता है। शांत रात और धीमी हवा धुएँ को सुबह तक रोके रखती है, मॉडल ने यह दो साल के आँकड़ों से सीखा है।",
+    s3H: "आपको एक सीधा संदेश मिलता है",
+    s3: "स्तर, क्या अंदर करना है, और हवा खराब क्यों है। AWS Lambda, EventBridge, S3 और SNS पर चलता है।",
+    foot1: "हवा के आँकड़े: CPCB और DPCC मॉनिटर (OpenAQ के ज़रिए)। मौसम और CAMS: Open-Meteo। आग: NASA FIRMS।",
+    foot2: "यह एक अनुमान है, गारंटी नहीं। आसमान और बच्चों पर भी नज़र रखें।",
+    hours: "सुबह 7 – दोपहर 2",
+    verdict: { out: "बाहरी गतिविधियाँ ठीक हैं", mixed: "बाहर का समय कम रखें", in: "बच्चों को अंदर रखें" },
+    unit: "µg/m³ PM2.5",
+    periods: { assembly: "प्रार्थना सभा", pe: "खेल / PT", break: "आधी छुट्टी", dispersal: "छुट्टी" },
+    where: { out: "बाहर", short: "बाहर, कम समय", in: "अंदर" },
+    advice: {
+      "Good": "सभी बाहरी गतिविधियाँ ठीक हैं।",
+      "Satisfactory": "बाहरी गतिविधियाँ ठीक हैं। संवेदनशील बच्चे आराम से खेलें।",
+      "Moderate": "लंबे खेल छोटे रखें। अस्थमा वाले बच्चों के इनहेलर पास रखें।",
+      "Poor": "तेज़ बाहरी खेल न कराएँ। प्रार्थना सभा छोटी रखें या अंदर करें।",
+      "Very Poor": "प्रार्थना सभा और खेल अंदर कराएँ। शुरुआती घंटों में खिड़कियाँ बंद रखें।",
+      "Severe": "कोई बाहरी गतिविधि नहीं। छोटे बच्चों के लिए ऑनलाइन कक्षाओं पर विचार करें।",
+    },
+    why: n => `क्यों: पिछले 3 दिनों में पंजाब और हरियाणा में ${n} जगह पराली जली, और हवा धुएँ को दिल्ली की ओर ला रही है।`,
+    issued: (t) => `अनुमान जारी: ${t}`,
+    noneBig: "कल का अनुमान शाम 6 बजे आएगा।",
+    noneSmall: "नीचे साइन अप करें, तैयार होते ही ईमेल पर मिल जाएगा।",
+    loadErr: "अनुमान लोड नहीं हो सका। इंटरनेट जाँचें और पेज रीफ़्रेश करें।",
+    exampleTag: "12 नवंबर 2025 का उदाहरण (डेमो डेटा)",
+    subSending: "भेजा जा रहा है…",
+    subErrEmail: "सही ईमेल पता डालें।",
+    subErr: "साइन अप नहीं हो सका। एक मिनट बाद फिर कोशिश करें।",
+    levels: { "Good": "अच्छा", "Satisfactory": "संतोषजनक", "Moderate": "मध्यम", "Poor": "खराब", "Very Poor": "बहुत खराब", "Severe": "गंभीर" },
+  },
+};
+
+// Shown only with ?demo=1 - the real 6 PM forecast replayed for 12 Nov 2025
+const DEMO = {
+  issued_at: "2025-11-12T18:00+05:30", demo: true,
+  forecasts: [
+    { station: "rohini", label: "North Delhi (Alipur monitor)", status: "ok", for_date: "2025-11-13", pm25_school_hours: 334, category: "Severe", fires_last_3_days: 792, smoke_wind_from_northwest: true },
+    { station: "dwarka", label: "South-West Delhi (Vasant Kunj monitor)", status: "ok", for_date: "2025-11-13", pm25_school_hours: 156, category: "Very Poor", fires_last_3_days: 792, smoke_wind_from_northwest: true },
+    { station: "anand_vihar", label: "East Delhi (Anand Vihar)", status: "ok", for_date: "2025-11-13", pm25_school_hours: 327, category: "Severe", fires_last_3_days: 792, smoke_wind_from_northwest: true },
+    { station: "rk_puram", label: "South Delhi (R K Puram)", status: "ok", for_date: "2025-11-13", pm25_school_hours: 324, category: "Severe", fires_last_3_days: 792, smoke_wind_from_northwest: true },
+  ],
+};
+
+const AREA_HI = {
+  rohini: "उत्तर दिल्ली (अलीपुर मॉनिटर)", dwarka: "दक्षिण-पश्चिम दिल्ली (वसंत कुंज मॉनिटर)",
+  anand_vihar: "पूर्वी दिल्ली (आनंद विहार)", rk_puram: "दक्षिण दिल्ली (आर के पुरम)",
+  punjabi_bagh: "पश्चिम दिल्ली (दिल्ली कैंटोनमेंट मॉनिटर)", ito: "मध्य दिल्ली (ITO क्षेत्र)",
+};
+
+let lang = "en";
+let stations = [];
+let data = null;
+let loadFailed = false;
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch {} },
+};
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const t = () => T[lang];
+const areaName = s => lang === "hi" ? (AREA_HI[s.id || s.station] || s.label) : s.label;
+
+function levelFor(cat) { return LEVELS.find(l => l.key === cat) || LEVELS[2]; }
+
+function fmtDate(iso) {
+  const d = new Date(iso + "T00:00:00");
+  return d.toLocaleDateString(lang === "hi" ? "hi-IN" : "en-IN", { weekday: "long", day: "numeric", month: "long" });
+}
+function fmtIssued(iso) {
+  const d = new Date(iso);
+  return d.toLocaleString(lang === "hi" ? "hi-IN" : "en-IN", { weekday: "short", hour: "numeric", minute: "2-digit", day: "numeric", month: "short", timeZone: "Asia/Kolkata" });
+}
+
+function renderDay() {
+  const box = $("#day");
+  const id = $("#area").value;
+  if (loadFailed) {
+    box.innerHTML = `<div class="empty"><p class="big">${esc(t().loadErr)}</p></div>`;
+    return;
+  }
+  if (!data) return;
+  const f = (data.forecasts || []).find(x => x.station === id);
+  if (!f || f.status !== "ok") {
+    box.style.removeProperty("--cat"); box.style.removeProperty("--cat-ink");
+    box.classList.remove("reveal");
+    box.innerHTML = `<div class="empty"><p class="big">${esc(t().noneBig)}</p><p>${esc(t().noneSmall)}</p></div>`;
+    return;
+  }
+  const lvl = levelFor(f.category);
+  const plan = PLAN[f.category];
+  const ins = Object.values(plan).filter(v => v === "in").length;
+  const outs = Object.values(plan).filter(v => v === "out").length;
+  const verdict = outs === 4 ? t().verdict.out : ins >= 3 ? t().verdict.in : t().verdict.mixed;
+  const times = { assembly: "7:30", pe: "10:00", break: "11:30", dispersal: "2:00" };
+  const fires = f.fires_last_3_days > 300 && f.smoke_wind_from_northwest;
+
+  box.style.setProperty("--cat", lvl.color);
+  box.style.setProperty("--cat-ink", lvl.ink);
+  box.innerHTML = `
+    <div class="day-head">
+      <span class="day-date">${esc(fmtDate(f.for_date))}, ${esc(t().hours)}</span>
+      <p class="verdict">${esc(verdict)}</p>
+      <div class="reading"><b>${f.pm25_school_hours}</b><span>${esc(t().levels[f.category])}<br>${esc(t().unit)}</span></div>
+    </div>
+    <ul class="periods">
+      ${Object.keys(times).map(k => `
+        <li><time>${times[k]}</time><span class="what">${esc(t().periods[k])}</span>
+        <span class="where ${plan[k]}">${esc(t().where[plan[k]])}</span></li>`).join("")}
+    </ul>
+    <div class="day-foot">
+      <p class="advice">${esc(t().advice[f.category])}</p>
+      ${fires ? `<p class="why">${esc(t().why(f.fires_last_3_days))}</p>` : ""}
+      <p class="issued">${esc(data.demo ? t().exampleTag : t().issued(fmtIssued(f.issued_at || data.issued_at)))}</p>
+    </div>`;
+  box.classList.remove("reveal"); void box.offsetWidth; box.classList.add("reveal");
+}
+
+function renderScale() {
+  let lo = 0;
+  $("#scale").innerHTML = LEVELS.map(l => {
+    const range = l.max === Infinity ? `${lo + 1}+` : `${lo === 0 ? 0 : lo + 1}–${l.max}`;
+    lo = l.max;
+    return `<li><span class="swatch" style="background:${l.color}"></span>
+      <span class="name">${esc(t().levels[l.key])}<span class="range">${range} µg/m³</span></span>
+      <p>${esc(t().advice[l.key])}</p></li>`;
+  }).join("");
+}
+
+function fillSelects() {
+  for (const sel of [$("#area"), $("#area2")]) {
+    const keep = sel.value;
+    sel.innerHTML = stations.map(s => `<option value="${esc(s.id)}">${esc(areaName(s))}</option>`).join("");
+    if (keep) sel.value = keep;
+  }
+}
+
+function applyLang(l) {
+  lang = l;
+  document.documentElement.lang = l === "hi" ? "hi" : "en";
+  document.querySelectorAll("[data-lang]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === l)));
+  document.querySelectorAll("[data-t]").forEach(el => {
+    const v = T[l][el.dataset.t];
+    if (typeof v === "string") el.innerHTML = v;   // strings are our own, not user input
+  });
+  store.set("lang", l);
+  fillSelects(); renderDay(); renderScale();
+}
+
+async function load() {
+  const demo = new URLSearchParams(location.search).has("demo");
+  try {
+    const sres = await fetch(`${API}/stations`);
+    stations = await sres.json();
+  } catch {
+    stations = Object.keys(AREA_HI).map(id => ({ id, label: id }));
+  }
+  fillSelects();
+  const saved = store.get("area");
+  const first = demo ? "rk_puram" : (saved && stations.some(s => s.id === saved) ? saved : "rk_puram");
+  $("#area").value = first; $("#area2").value = first;
+
+  if (demo) { data = DEMO; renderDay(); return; }
+  try {
+    const r = await fetch(`${API}/forecast`, { cache: "no-store" });
+    if (r.status === 404) { data = { forecasts: [] }; }
+    else if (!r.ok) throw new Error(r.status);
+    else data = await r.json();
+  } catch { loadFailed = true; }
+  renderDay();
+}
+
+$("#area").addEventListener("change", e => {
+  store.set("area", e.target.value); $("#area2").value = e.target.value; renderDay();
+});
+document.querySelectorAll("[data-lang]").forEach(b => b.addEventListener("click", () => applyLang(b.dataset.lang)));
+
+$("#signup").addEventListener("submit", async e => {
+  e.preventDefault();
+  const status = $("#subStatus"), btn = $("#subBtn");
+  const email = $("#email").value.trim();
+  status.className = "status full";
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+    status.textContent = t().subErrEmail; status.classList.add("err"); $("#email").focus(); return;
+  }
+  btn.disabled = true; status.textContent = t().subSending;
+  try {
+    const r = await fetch(`${API}/subscribe`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, station: $("#area2").value }),
+    });
+    const body = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(body.error || "");
+    status.textContent = lang === "hi"
+      ? `${email} पर पुष्टि ईमेल भेजा गया। अलर्ट शुरू करने के लिए उसमें दिए लिंक पर क्लिक करें।`
+      : body.message;
+    status.classList.add("ok");
+    $("#email").value = "";
+  } catch (err) {
+    status.textContent = err.message || t().subErr; status.classList.add("err");
+  } finally { btn.disabled = false; }
+});
+
+applyLang(store.get("lang") === "hi" ? "hi" : "en");
+load();
+</script>
+</body>
+</html>

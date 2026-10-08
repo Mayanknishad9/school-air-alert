@@ -170,13 +170,34 @@ def run(dry_run=False):
 
     import boto3
     s3, sns = boto3.client("s3"), boto3.client("sns")
-    body = json.dumps(payload, ensure_ascii=False).encode()
     bucket = os.environ["FORECAST_BUCKET"]
-    s3.put_object(Bucket=bucket, Key="forecasts/latest.json", Body=body, ContentType="application/json")
-    day = results[0].get("for_date") or datetime.now(IST).date().isoformat()
-    s3.put_object(Bucket=bucket, Key=f"forecasts/{day}.json", Body=body, ContentType="application/json")
+    fresh = {f["station"] for f in results if f["status"] == "ok"}
+
+    # A run at a bad time (too few readings yet, an API down) must not wipe the
+    # website: keep each area's last good forecast while it is still about today
+    # or a later day.
+    try:
+        prev = json.loads(s3.get_object(Bucket=bucket, Key="forecasts/latest.json")["Body"].read())
+        prev_ok = {f["station"]: f for f in prev.get("forecasts", []) if f.get("status") == "ok"}
+        today = datetime.now(IST).date().isoformat()
+        for i, f in enumerate(results):
+            old = prev_ok.get(f["station"])
+            if f["status"] != "ok" and old and old.get("for_date", "") >= today:
+                results[i] = {**old, "issued_at": old.get("issued_at", prev.get("issued_at"))}
+    except Exception:
+        pass
     for f in results:
-        if f["status"] != "ok":
+        if f["station"] in fresh:
+            f["issued_at"] = payload["issued_at"]
+    payload["forecasts"] = results
+
+    body = json.dumps(payload, ensure_ascii=False).encode()
+    s3.put_object(Bucket=bucket, Key="forecasts/latest.json", Body=body, ContentType="application/json")
+    if fresh:   # dated archive only for real new forecasts
+        day = next(f["for_date"] for f in results if f["station"] in fresh)
+        s3.put_object(Bucket=bucket, Key=f"forecasts/{day}.json", Body=body, ContentType="application/json")
+    for f in results:
+        if f["station"] not in fresh:   # only alert on forecasts made in this run
             continue
         sns.publish(
             TopicArn=os.environ["ALERT_TOPIC_ARN"],
