@@ -78,7 +78,8 @@ Resources:
               Resource: !Ref AlertTopic
             - Effect: Allow
               Action: [sns:GetSubscriptionAttributes, sns:SetSubscriptionAttributes]
-              Resource: !Sub "${AlertTopic}:*"   # subscription ARNs = topic ARN + ":id"
+              # SNS checks these against the topic ARN, not the subscription ARN
+              Resource: [!Ref AlertTopic, !Sub "${AlertTopic}:*"]
       Events:
         Forecast:
           Type: HttpApi
