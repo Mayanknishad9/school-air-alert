@@ -28,6 +28,7 @@ from predictor import Forecaster, advice    # noqa: E402
 from stations import STATIONS               # noqa: E402
 
 IST = timezone(timedelta(hours=5, minutes=30))
+SITE_URL = os.environ.get("SITE_URL", "https://main.d3a50vkyiccbtm.amplifyapp.com")
 STALE_HOURS = 6   # main monitor counts as offline if its newest reading is older than this
 _bk = os.path.join(os.path.dirname(os.path.abspath(__file__)), "backup_sensors.json")
 BACKUPS = json.load(open(_bk)) if os.path.exists(_bk) else {}
@@ -170,6 +171,7 @@ def message(f):
         f"What to do: {f['advice']}\n"
         + (f"Why: {why[0]}\n" if why else "")
         + (f"Note: {f['monitor_note']}\n" if f.get("monitor_note") else "")
+        + f"\nForward it to your staff or parents on WhatsApp: {SITE_URL}/?area={f['station']}\n"
         + "\n(Forecast by School Air Alert. Based on live CPCB/DPCC monitors, weather forecasts "
           "and NASA fire satellites.)"
     )
