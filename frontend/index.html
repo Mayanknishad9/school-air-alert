@@ -502,6 +502,7 @@ function renderDay() {
     <div class="day-foot">
       <p class="advice">${esc(t().advice[f.category])}</p>
       ${fires ? `<p class="why">${esc(t().why(f.fires_last_3_days))}</p>` : ""}
+      ${f.monitor_note ? `<p class="issued">${esc(f.monitor_note)}</p>` : ""}
       <p class="issued">${esc(data.demo ? t().exampleTag : t().issued(fmtIssued(f.issued_at || data.issued_at)))}</p>
     </div>`;
   box.classList.remove("reveal"); void box.offsetWidth; box.classList.add("reveal");

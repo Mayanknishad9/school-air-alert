@@ -28,6 +28,9 @@ from predictor import Forecaster, advice    # noqa: E402
 from stations import STATIONS               # noqa: E402
 
 IST = timezone(timedelta(hours=5, minutes=30))
+STALE_HOURS = 6   # main monitor counts as offline if its newest reading is older than this
+_bk = os.path.join(os.path.dirname(os.path.abspath(__file__)), "backup_sensors.json")
+BACKUPS = json.load(open(_bk)) if os.path.exists(_bk) else {}
 FIRE_BBOX = "73.8,27.6,77.6,32.6"
 MODEL = Forecaster()
 
@@ -109,8 +112,25 @@ def fires_recent(days=9):
 
 
 # ------------------------------------------------------------------ forecast
+def _is_fresh(pm):
+    if pm.empty:
+        return False
+    newest = pd.to_datetime(pm["time"], utc=True).max()
+    return (pd.Timestamp.now(tz="UTC") - newest) < pd.Timedelta(hours=STALE_HOURS)
+
+
 def forecast_station(name, cfg, fires):
     pm = pm25_recent(cfg["sensor_id"])
+    monitor_note = None
+    if not _is_fresh(pm) and name in BACKUPS:
+        # Some DPCC monitors reach OpenAQ a day or more late. Use the nearby real-time
+        # monitor that tracks this one best, put on the main monitor's scale.
+        b = BACKUPS[name]
+        bpm = pm25_recent(b["sensor_id"])
+        if _is_fresh(bpm):
+            pm = bpm.assign(pm25=bpm["pm25"] * b["scale"])
+            monitor_note = (f"Main monitor is reporting late, so this uses {b['name']} "
+                            f"({b['distance_km']} km away), calibrated to it.")
     if pm.empty:
         return {"station": name, "label": cfg["label"], "status": "no_live_data"}
     frame = station_frame(name, pm, weather_forecast(cfg["lat"], cfg["lon"]),
@@ -133,6 +153,7 @@ def forecast_station(name, cfg, fires):
         "cams_pm25": None if feats.get("cams_tmr") is None else round(feats["cams_tmr"]),
         "fires_last_3_days": int(feats.get("fires_3d") or 0),
         "smoke_wind_from_northwest": bool((feats.get("nw_wind_today") or 0) > 1.5),
+        "monitor_note": monitor_note,
     }
 
 
@@ -148,6 +169,7 @@ def message(f):
         f"Expected PM2.5: {f['pm25_school_hours']} ug/m3 - {f['category']} ({f['category_hi']})\n"
         f"What to do: {f['advice']}\n"
         + (f"Why: {why[0]}\n" if why else "")
+        + (f"Note: {f['monitor_note']}\n" if f.get("monitor_note") else "")
         + "\n(Forecast by School Air Alert. Based on live CPCB/DPCC monitors, weather forecasts "
           "and NASA fire satellites.)"
     )

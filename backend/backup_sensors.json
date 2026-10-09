@@ -1,0 +1,18 @@
+{
+  "anand_vihar": {
+    "sensor_id": 15289075,
+    "name": "Air Check",
+    "distance_km": 8.5,
+    "scale": 0.93,
+    "corr": 0.679,
+    "overlap_hours": 638
+  },
+  "rk_puram": {
+    "sensor_id": 14745878,
+    "name": "Anand Lok",
+    "distance_km": 3.2,
+    "scale": 1.024,
+    "corr": 0.752,
+    "overlap_hours": 621
+  }
+}
