@@ -73,6 +73,12 @@ monitors measured 319, 353 and 342.
   a claimed accuracy gain.
 - Three areas use the nearest working monitor, and the site names that monitor (for
   example "North Delhi (Alipur monitor)").
+- Some DPCC monitors reach OpenAQ more than a day late. When an area's monitor is more than
+  6 hours behind, the forecast switches to the nearest real-time monitor that tracks it
+  well (correlation of at least 0.6 over the last 30 days), calibrated to the main
+  monitor's level, and the site says which monitor was used. If no nearby monitor tracks
+  it that well, the area shows "data unavailable" rather than a guess
+  (`scripts/find_backups.py`).
 
 ## How it works
 
