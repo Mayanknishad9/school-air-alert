@@ -74,8 +74,11 @@ Resources:
         - S3ReadPolicy: { BucketName: !Ref ForecastBucket }
         - Statement:
             - Effect: Allow
-              Action: sns:Subscribe
+              Action: [sns:Subscribe, sns:ListSubscriptionsByTopic]
               Resource: !Ref AlertTopic
+            - Effect: Allow
+              Action: [sns:GetSubscriptionAttributes, sns:SetSubscriptionAttributes]
+              Resource: !Sub "${AlertTopic}:*"   # subscription ARNs = topic ARN + ":id"
       Events:
         Forecast:
           Type: HttpApi

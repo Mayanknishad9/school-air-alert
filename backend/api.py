@@ -25,6 +25,18 @@ def _resp(code, body):
             "body": json.dumps(body, ensure_ascii=False)}
 
 
+def _find_subscription(email):
+    """ARN of this email's subscription on the alert topic ('PendingConfirmation' if not
+    yet confirmed), or None if it has none."""
+    pages = sns.get_paginator("list_subscriptions_by_topic").paginate(
+        TopicArn=os.environ["ALERT_TOPIC_ARN"])
+    for page in pages:
+        for sub in page["Subscriptions"]:
+            if sub["Protocol"] == "email" and sub["Endpoint"].lower() == email.lower():
+                return sub["SubscriptionArn"]
+    return None
+
+
 def handler(event, context):
     route = event.get("routeKey", "")
     if route == "GET /forecast":
@@ -48,11 +60,29 @@ def handler(event, context):
             return _resp(400, {"error": "Please enter a valid email address."})
         if station not in STATIONS:
             return _resp(400, {"error": "Please pick an area from the list."})
-        sns.subscribe(
-            TopicArn=os.environ["ALERT_TOPIC_ARN"], Protocol="email", Endpoint=email,
-            Attributes={"FilterPolicy": json.dumps({"station": [station]})},
+        label = STATIONS[station]["label"]
+        existing = _find_subscription(email)
+        if existing is None:
+            sns.subscribe(
+                TopicArn=os.environ["ALERT_TOPIC_ARN"], Protocol="email", Endpoint=email,
+                Attributes={"FilterPolicy": json.dumps({"station": [station]})},
+            )
+            return _resp(200, {"message": f"Check {email} and click the AWS confirmation link "
+                                          f"to start getting alerts for {label}."})
+        if existing == "PendingConfirmation":
+            # SNS cannot change a subscription until it is confirmed
+            return _resp(409, {"error": f"{email} has a confirmation email waiting. Click the "
+                                        f"link in it first, then add {label} again."})
+        attrs = sns.get_subscription_attributes(SubscriptionArn=existing)["Attributes"]
+        areas = json.loads(attrs.get("FilterPolicy") or "{}").get("station", [])
+        if station in areas:
+            return _resp(200, {"message": f"{email} already gets alerts for {label}."})
+        areas.append(station)
+        sns.set_subscription_attributes(
+            SubscriptionArn=existing, AttributeName="FilterPolicy",
+            AttributeValue=json.dumps({"station": areas}),
         )
-        return _resp(200, {"message": f"Check {email} and click the AWS confirmation link "
-                                      f"to start getting alerts for {STATIONS[station]['label']}."})
+        names = ", ".join(STATIONS[a]["label"] for a in areas if a in STATIONS)
+        return _resp(200, {"message": f"Added. {email} now gets alerts for: {names}."})
 
     return _resp(404, {"error": "Not found"})
