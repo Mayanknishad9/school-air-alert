@@ -56,9 +56,13 @@ station-days across 6 Delhi monitors, from Feb 2025 to Oct 2026.
 | Assuming tomorrow = today | 24.8 | 52% | 70% | 70% |
 | CAMS global model | 49.3 | 28% | 22% | 26% |
 
-**In the stubble-burning and winter season (Oct–Jan),** School Air Alert warned about
-**88%** of Very Poor and Severe school days the evening before. The CAMS global model
-warned about **30%**.
+**In the stubble-burning and winter season (Oct–Jan),** there were 267 school days with
+Very Poor or Severe air. School Air Alert warned about **236 of them (88%)** the evening
+before, and 86% of its warnings were right. The CAMS global model warned about **79 (30%)**.
+
+![Bad school days warned about the evening before: School Air Alert 236 of 267, assuming tomorrow = today 222, CAMS 79](docs/results-bad-days.png)
+
+![Forecast vs measured PM2.5 at Anand Vihar, Oct–Dec 2025: School Air Alert tracks the measured line; CAMS stays far below](docs/results-forecast-vs-measured.png)
 
 **Example.** On the evening of 12 Nov 2025 it would have forecast *Severe* air for the
 next school day at Alipur, Anand Vihar and R K Puram (334, 327 and 324 µg/m³). The
